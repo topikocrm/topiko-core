@@ -1,33 +1,12 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import FinanceFlowTheme from "@/themes/financeFlow";
 
-async function getContentFromAPI() {
-  try {
-    // Fetch content from our admin API
-    const baseUrl = process.env.NEXT_PUBLIC_PAYLOAD_URL || 'http://localhost:3000'
-    
-    const heroRes = await fetch(`${baseUrl}/api/admin/hero`, { cache: 'no-store' })
-    const heroData = await heroRes.json()
+export default function Home() {
+  const [content, setContent] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-    return {
-      hero: heroData.success ? heroData.data : null,
-      theme: {
-        colors: {
-          gradientFrom: "from-teal-600",
-          gradientTo: "to-cyan-600",
-          primary: "#0d9488"
-        }
-      }
-    }
-  } catch (error) {
-    console.log('Using fallback content:', error.message)
-    return null
-  }
-}
-
-export default async function Home() {
-  // Try to get dynamic content, fall back to static if needed
-  const dynamicContent = await getContentFromAPI()
-  
   const staticContent = {
     hero: {
       badge: "🚀 New AI Features Available",
@@ -46,8 +25,50 @@ export default async function Home() {
     }
   };
 
-  // Use dynamic content if available, otherwise use static
-  const content = dynamicContent || staticContent;
+  useEffect(() => {
+    async function fetchContent() {
+      try {
+        console.log('Fetching content from API...')
+        const response = await fetch('/api/admin/hero', { 
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        
+        const heroData = await response.json()
+        console.log('Fetched hero data:', heroData)
+        
+        if (heroData.success) {
+          setContent({
+            hero: heroData.data,
+            theme: staticContent.theme
+          })
+          console.log('Updated content with:', heroData.data)
+        } else {
+          setContent(staticContent)
+        }
+      } catch (error) {
+        console.error('Failed to fetch content:', error)
+        setContent(staticContent)
+      }
+      setLoading(false)
+    }
+
+    fetchContent()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl">Loading FinanceFlow theme...</div>
+      </div>
+    )
+  }
 
   return <FinanceFlowTheme content={content} />;
 }
