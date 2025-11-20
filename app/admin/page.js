@@ -55,7 +55,11 @@ export default function AdminPage() {
 
   const handleSave = async () => {
     setSaving(true)
+    setMessage('')
+    
     try {
+      console.log('Saving data:', heroData)
+      
       const response = await fetch('/api/admin/hero', {
         method: 'POST',
         headers: {
@@ -63,17 +67,29 @@ export default function AdminPage() {
         },
         body: JSON.stringify(heroData)
       })
+      
+      console.log('Response status:', response.status)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
       const result = await response.json()
+      console.log('Save result:', result)
+      
       if (result.success) {
         setMessage('✅ Content updated successfully! Refresh your site to see changes.')
       } else {
-        setMessage('❌ Failed to update content.')
+        setMessage(`❌ Failed to update content: ${result.error || 'Unknown error'}`)
+        console.error('Save failed:', result)
       }
     } catch (error) {
-      setMessage('❌ Error updating content.')
+      console.error('Save error:', error)
+      setMessage(`❌ Error updating content: ${error.message}`)
     }
+    
     setSaving(false)
-    setTimeout(() => setMessage(''), 5000)
+    setTimeout(() => setMessage(''), 10000)
   }
 
   if (loading) {

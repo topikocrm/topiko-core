@@ -69,35 +69,78 @@ export async function GET() {
 
 export async function POST(request) {
   try {
+    console.log('POST /api/admin/hero - Starting request')
+    
     if (!process.env.DATABASE_URI) {
+      console.error('DATABASE_URI environment variable is not set')
       throw new Error('DATABASE_URI environment variable is not set')
     }
 
     const data = await request.json()
+    console.log('Received data:', JSON.stringify(data, null, 2))
+    
+    // Validate required fields
+    if (!data.headline || !data.description) {
+      throw new Error('Missing required fields: headline and description are required')
+    }
     
     const client = await connectToDatabase()
+    console.log('Connected to database')
+    
     const db = client.db()
     const collection = db.collection('heroes')
     
-    // Update or create hero content
-    const result = await collection.updateOne(
-      { isActive: true },
-      { 
-        $set: {
-          ...data,
-          isActive: true,
-          updatedAt: new Date()
-        }
+    // Prepare update data with proper structure
+    const updateData = {
+      badge: data.badge || "🚀 New AI Features Available",
+      headline: data.headline,
+      description: data.description,
+      primaryButton: {
+        text: data.primaryButton?.text || "Start Free Trial",
+        url: data.primaryButton?.url || "/signup"
       },
+      secondaryButton: {
+        text: data.secondaryButton?.text || "Watch Demo", 
+        url: data.secondaryButton?.url || "/demo"
+      },
+      emailSignup: {
+        placeholder: data.emailSignup?.placeholder || "Enter your work email",
+        enabled: true,
+        buttonText: "Get Started",
+        subtitle: "Join 10,000+ finance professionals"
+      },
+      isActive: true,
+      updatedAt: new Date()
+    }
+    
+    console.log('Update data prepared:', JSON.stringify(updateData, null, 2))
+    
+    // Update or create hero content
+    const result = await collection.replaceOne(
+      { isActive: true },
+      updateData,
       { upsert: true }
     )
     
-    return NextResponse.json({ success: true, result })
+    console.log('Database operation result:', result)
+    
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Content updated successfully',
+      result: {
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+        upsertedCount: result.upsertedCount
+      }
+    })
   } catch (error) {
-    console.error('POST /api/admin/hero error:', error.message)
+    console.error('POST /api/admin/hero error:', error)
+    console.error('Error stack:', error.stack)
+    
     return NextResponse.json({ 
       success: false, 
-      error: error.message 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : 'Internal server error'
     }, { status: 500 })
   }
 }
