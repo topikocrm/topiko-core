@@ -1,8 +1,32 @@
 import FinanceFlowTheme from "@/themes/financeFlow";
 
-export default function Home() {
-  // Static content with PayloadCMS-like structure for immediate deployment
-  // The admin panel at /admin will allow editing these values in the database
+async function getContentFromAPI() {
+  try {
+    // Fetch content from PayloadCMS API
+    const baseUrl = process.env.NEXT_PUBLIC_PAYLOAD_URL || 'http://localhost:3000'
+    
+    const [heroRes, themeRes] = await Promise.all([
+      fetch(`${baseUrl}/api/heroes?where[isActive][equals]=true&limit=1`, { cache: 'no-store' }),
+      fetch(`${baseUrl}/api/themeSettings?where[isActive][equals]=true&limit=1`, { cache: 'no-store' })
+    ])
+
+    const heroData = await heroRes.json()
+    const themeData = await themeRes.json()
+
+    return {
+      hero: heroData.docs?.[0] || null,
+      theme: themeData.docs?.[0] || null
+    }
+  } catch (error) {
+    console.log('Using fallback content:', error.message)
+    return null
+  }
+}
+
+export default async function Home() {
+  // Try to get dynamic content, fall back to static if needed
+  const dynamicContent = await getContentFromAPI()
+  
   const staticContent = {
     hero: {
       badge: "🚀 New AI Features Available",
@@ -21,5 +45,8 @@ export default function Home() {
     }
   };
 
-  return <FinanceFlowTheme content={staticContent} />;
+  // Use dynamic content if available, otherwise use static
+  const content = dynamicContent || staticContent;
+
+  return <FinanceFlowTheme content={content} />;
 }
