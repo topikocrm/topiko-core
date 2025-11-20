@@ -1,66 +1,33 @@
 import { NextResponse } from 'next/server'
-import { MongoClient } from 'mongodb'
 
-let cachedClient = null
-
-async function connectToDatabase() {
-  if (cachedClient) {
-    return cachedClient
-  }
-
-  try {
-    const client = new MongoClient(process.env.DATABASE_URI, {
-      useUnifiedTopology: true,
-    })
-    
-    await client.connect()
-    cachedClient = client
-    return client
-  } catch (error) {
-    console.error('MongoDB connection error:', error)
-    throw error
-  }
+// Fallback to simple storage for now since MongoDB is having issues
+const defaultHeroData = {
+  badge: "🚀 New AI Features Available",
+  headline: "The AI Revenue Platform for Next Gen Finance teams",
+  description: "Unlock powerful revenue insights with AI-driven analytics. Make data-driven decisions faster and grow revenue predictably.",
+  primaryButton: { text: "Start Free Trial", url: "/signup" },
+  secondaryButton: { text: "Watch Demo", url: "/demo" },
+  emailSignup: { placeholder: "Enter your work email" }
 }
+
+// In-memory storage for demo purposes (will reset on each deployment)
+let storedHeroData = { ...defaultHeroData }
 
 export async function GET() {
   try {
-    if (!process.env.DATABASE_URI) {
-      throw new Error('DATABASE_URI environment variable is not set')
-    }
-
-    const client = await connectToDatabase()
-    const db = client.db()
-    const collection = db.collection('heroes')
-    
-    const hero = await collection.findOne({ isActive: true })
-    
-    const defaultHero = {
-      badge: "🚀 New AI Features Available",
-      headline: "The AI Revenue Platform for Next Gen Finance teams",
-      description: "Unlock powerful revenue insights with AI-driven analytics. Make data-driven decisions faster and grow revenue predictably.",
-      primaryButton: { text: "Start Free Trial", url: "/signup" },
-      secondaryButton: { text: "Watch Demo", url: "/demo" },
-      emailSignup: { placeholder: "Enter your work email" }
-    }
+    console.log('GET /api/admin/hero - Returning stored data')
     
     return NextResponse.json({ 
       success: true, 
-      data: hero || defaultHero
+      data: storedHeroData,
+      message: 'Using in-memory storage (demo mode)'
     })
   } catch (error) {
     console.error('GET /api/admin/hero error:', error.message)
     
-    // Return default content if database fails
     return NextResponse.json({ 
       success: true, 
-      data: {
-        badge: "🚀 New AI Features Available",
-        headline: "The AI Revenue Platform for Next Gen Finance teams",
-        description: "Unlock powerful revenue insights with AI-driven analytics. Make data-driven decisions faster and grow revenue predictably.",
-        primaryButton: { text: "Start Free Trial", url: "/signup" },
-        secondaryButton: { text: "Watch Demo", url: "/demo" },
-        emailSignup: { placeholder: "Enter your work email" }
-      },
+      data: defaultHeroData,
       fallback: true,
       error: error.message
     })
@@ -71,11 +38,6 @@ export async function POST(request) {
   try {
     console.log('POST /api/admin/hero - Starting request')
     
-    if (!process.env.DATABASE_URI) {
-      console.error('DATABASE_URI environment variable is not set')
-      throw new Error('DATABASE_URI environment variable is not set')
-    }
-
     const data = await request.json()
     console.log('Received data:', JSON.stringify(data, null, 2))
     
@@ -84,54 +46,31 @@ export async function POST(request) {
       throw new Error('Missing required fields: headline and description are required')
     }
     
-    const client = await connectToDatabase()
-    console.log('Connected to database')
-    
-    const db = client.db()
-    const collection = db.collection('heroes')
-    
-    // Prepare update data with proper structure
-    const updateData = {
-      badge: data.badge || "🚀 New AI Features Available",
+    // Update in-memory storage
+    storedHeroData = {
+      badge: data.badge || defaultHeroData.badge,
       headline: data.headline,
       description: data.description,
       primaryButton: {
-        text: data.primaryButton?.text || "Start Free Trial",
-        url: data.primaryButton?.url || "/signup"
+        text: data.primaryButton?.text || defaultHeroData.primaryButton.text,
+        url: data.primaryButton?.url || defaultHeroData.primaryButton.url
       },
       secondaryButton: {
-        text: data.secondaryButton?.text || "Watch Demo", 
-        url: data.secondaryButton?.url || "/demo"
+        text: data.secondaryButton?.text || defaultHeroData.secondaryButton.text,
+        url: data.secondaryButton?.url || defaultHeroData.secondaryButton.url
       },
       emailSignup: {
-        placeholder: data.emailSignup?.placeholder || "Enter your work email",
-        enabled: true,
-        buttonText: "Get Started",
-        subtitle: "Join 10,000+ finance professionals"
+        placeholder: data.emailSignup?.placeholder || defaultHeroData.emailSignup.placeholder
       },
-      isActive: true,
-      updatedAt: new Date()
+      updatedAt: new Date().toISOString()
     }
     
-    console.log('Update data prepared:', JSON.stringify(updateData, null, 2))
-    
-    // Update or create hero content
-    const result = await collection.replaceOne(
-      { isActive: true },
-      updateData,
-      { upsert: true }
-    )
-    
-    console.log('Database operation result:', result)
+    console.log('Updated stored data:', JSON.stringify(storedHeroData, null, 2))
     
     return NextResponse.json({ 
       success: true, 
-      message: 'Content updated successfully',
-      result: {
-        matchedCount: result.matchedCount,
-        modifiedCount: result.modifiedCount,
-        upsertedCount: result.upsertedCount
-      }
+      message: 'Content updated successfully (demo mode - will reset on next deployment)',
+      data: storedHeroData
     })
   } catch (error) {
     console.error('POST /api/admin/hero error:', error)
@@ -140,7 +79,7 @@ export async function POST(request) {
     return NextResponse.json({ 
       success: false, 
       error: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : 'Internal server error'
+      details: error.stack
     }, { status: 500 })
   }
 }
