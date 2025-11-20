@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
 // Simple API endpoint to check PayloadCMS status
-export async function GET(request: NextRequest) {
+export async function GET(request) {
   try {
     return NextResponse.json({ 
       status: 'PayloadCMS API ready',
