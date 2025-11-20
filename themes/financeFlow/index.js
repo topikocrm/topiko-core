@@ -6,17 +6,17 @@ import FinanceTestimonials from './components/FinanceTestimonials';
 import FinancePricing from './components/FinancePricing';
 import FinanceCTA from './components/FinanceCTA';
 
-export default function FinanceFlowTheme() {
+export default function FinanceFlowTheme({ content }) {
   return (
     <>
-      <FinanceHeader />
+      <FinanceHeader navigation={content?.navigation} theme={content?.theme} />
       <main>
-        <FinanceHero />
-        <FinanceLogos />
-        <FinanceFeatures />
-        <FinanceTestimonials />
-        <FinancePricing />
-        <FinanceCTA />
+        <FinanceHero hero={content?.hero} theme={content?.theme} />
+        <FinanceLogos companyLogos={content?.companyLogos} theme={content?.theme} />
+        <FinanceFeatures features={content?.features} theme={content?.theme} />
+        <FinanceTestimonials testimonials={content?.testimonials} theme={content?.theme} />
+        <FinancePricing pricing={content?.pricing} theme={content?.theme} />
+        <FinanceCTA hero={content?.hero} theme={content?.theme} />
       </main>
     </>
   );

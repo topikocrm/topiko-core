@@ -10,7 +10,19 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowRightIcon, PlayIcon, TrendingUpIcon, BarChart3Icon } from "lucide-react";
 import Image from "next/image";
 
-export default function FinanceHero() {
+export default function FinanceHero({ hero, theme }) {
+  // Use content from CMS or fallback to defaults
+  const badge = hero?.badge || "🚀 New AI Features Available";
+  const headline = hero?.headline || "The AI Revenue Platform for Next Gen Finance teams";
+  const description = hero?.description || "Unlock powerful revenue insights with AI-driven analytics. Make data-driven decisions faster and grow revenue predictably.";
+  const primaryButton = hero?.primaryButton || { text: "Start Free Trial", url: "/signup" };
+  const secondaryButton = hero?.secondaryButton || { text: "Watch Demo", url: "/demo" };
+  const emailPlaceholder = hero?.emailSignup?.placeholder || "Enter your work email";
+  
+  // Theme colors with fallbacks
+  const gradientFrom = theme?.colors?.gradientFrom || "from-teal-600";
+  const gradientTo = theme?.colors?.gradientTo || "to-cyan-600";
+  const primaryColor = theme?.colors?.primary || "#0d9488";
   return (
     <SectionContainer 
       sectionClassName="bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 min-h-[90vh] relative overflow-hidden"
@@ -25,21 +37,25 @@ export default function FinanceHero() {
           <Grid.Col className="space-y-8">
             <div className="space-y-6">
               <Badge variant="secondary" className="w-fit bg-teal-100 text-teal-700 border-teal-200 px-4 py-2">
-                🚀 New AI Features Available
+                {badge}
               </Badge>
               
               <div>
                 <Text as="h1" className="text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight text-gray-900 mb-6">
-                  The AI Revenue Platform for{" "}
-                  <span className="bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                    Next Gen Finance
-                  </span>{" "}
-                  teams
+                  {headline.split(' ').map((word, index) => {
+                    if (word.includes('Finance') || word.includes('AI') || word.includes('Revenue')) {
+                      return (
+                        <span key={index} className={`bg-gradient-to-r ${gradientFrom} ${gradientTo} bg-clip-text text-transparent`}>
+                          {word}{' '}
+                        </span>
+                      );
+                    }
+                    return word + ' ';
+                  })}
                 </Text>
                 
                 <Text className="text-xl text-gray-600 leading-relaxed max-w-lg">
-                  Unlock powerful revenue insights with AI-driven analytics. 
-                  Make data-driven decisions faster and grow revenue predictably.
+                  {description}
                 </Text>
               </div>
             </div>
@@ -51,13 +67,13 @@ export default function FinanceHero() {
                   size="lg" 
                   className="bg-teal-600 hover:bg-teal-700 text-white px-8 py-4 text-lg font-medium"
                 >
-                  Start Free Trial
+                  {primaryButton.text}
                   <ArrowRightIcon className="ml-2 w-5 h-5" />
                 </Button>
                 
                 <Button variant="ghost" size="lg" className="text-gray-600 hover:text-gray-900 font-medium">
                   <PlayIcon className="mr-2 w-5 h-5" />
-                  Watch Demo
+                  {secondaryButton.text}
                 </Button>
               </Flex>
 
@@ -69,7 +85,7 @@ export default function FinanceHero() {
                 <Flex className="space-x-3">
                   <Input 
                     type="email"
-                    placeholder="Enter your work email"
+                    placeholder={emailPlaceholder}
                     className="flex-1 bg-white border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
                   />
                   <Button className="bg-teal-600 hover:bg-teal-700 text-white">
