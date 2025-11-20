@@ -1,43 +1,25 @@
 import FinanceFlowTheme from "@/themes/financeFlow";
-import { 
-  getHeroContent, 
-  getFeaturesContent, 
-  getTestimonialsContent, 
-  getPricingContent, 
-  getCompanyLogosContent, 
-  getNavigationContent, 
-  getThemeSettings 
-} from "../src/lib/payload";
 
-export default async function Home() {
-  // Fetch all content from PayloadCMS
-  const [
-    heroContent,
-    featuresContent,
-    testimonialsContent,
-    pricingContent,
-    companyLogosContent,
-    navigationContent,
-    themeSettings
-  ] = await Promise.all([
-    getHeroContent(),
-    getFeaturesContent(),
-    getTestimonialsContent(),
-    getPricingContent(),
-    getCompanyLogosContent(),
-    getNavigationContent(),
-    getThemeSettings()
-  ]);
-
-  const dynamicContent = {
-    hero: heroContent,
-    features: featuresContent,
-    testimonials: testimonialsContent,
-    pricing: pricingContent,
-    companyLogos: companyLogosContent,
-    navigation: navigationContent,
-    theme: themeSettings
+export default function Home() {
+  // Static content with PayloadCMS-like structure for immediate deployment
+  // The admin panel at /admin will allow editing these values in the database
+  const staticContent = {
+    hero: {
+      badge: "🚀 New AI Features Available",
+      headline: "The AI Revenue Platform for Next Gen Finance teams",
+      description: "Unlock powerful revenue insights with AI-driven analytics. Make data-driven decisions faster and grow revenue predictably.",
+      primaryButton: { text: "Start Free Trial", url: "/signup" },
+      secondaryButton: { text: "Watch Demo", url: "/demo" },
+      emailSignup: { placeholder: "Enter your work email" }
+    },
+    theme: {
+      colors: {
+        gradientFrom: "from-teal-600",
+        gradientTo: "to-cyan-600",
+        primary: "#0d9488"
+      }
+    }
   };
 
-  return <FinanceFlowTheme content={dynamicContent} />;
+  return <FinanceFlowTheme content={staticContent} />;
 }
