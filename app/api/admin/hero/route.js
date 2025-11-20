@@ -1,39 +1,81 @@
 import { NextResponse } from 'next/server'
 import { MongoClient } from 'mongodb'
 
-const client = new MongoClient(process.env.DATABASE_URI)
+let cachedClient = null
+
+async function connectToDatabase() {
+  if (cachedClient) {
+    return cachedClient
+  }
+
+  try {
+    const client = new MongoClient(process.env.DATABASE_URI, {
+      useUnifiedTopology: true,
+    })
+    
+    await client.connect()
+    cachedClient = client
+    return client
+  } catch (error) {
+    console.error('MongoDB connection error:', error)
+    throw error
+  }
+}
 
 export async function GET() {
   try {
-    await client.connect()
+    if (!process.env.DATABASE_URI) {
+      throw new Error('DATABASE_URI environment variable is not set')
+    }
+
+    const client = await connectToDatabase()
     const db = client.db()
     const collection = db.collection('heroes')
     
     const hero = await collection.findOne({ isActive: true })
     
+    const defaultHero = {
+      badge: "🚀 New AI Features Available",
+      headline: "The AI Revenue Platform for Next Gen Finance teams",
+      description: "Unlock powerful revenue insights with AI-driven analytics. Make data-driven decisions faster and grow revenue predictably.",
+      primaryButton: { text: "Start Free Trial", url: "/signup" },
+      secondaryButton: { text: "Watch Demo", url: "/demo" },
+      emailSignup: { placeholder: "Enter your work email" }
+    }
+    
     return NextResponse.json({ 
       success: true, 
-      data: hero || {
+      data: hero || defaultHero
+    })
+  } catch (error) {
+    console.error('GET /api/admin/hero error:', error.message)
+    
+    // Return default content if database fails
+    return NextResponse.json({ 
+      success: true, 
+      data: {
         badge: "🚀 New AI Features Available",
         headline: "The AI Revenue Platform for Next Gen Finance teams",
         description: "Unlock powerful revenue insights with AI-driven analytics. Make data-driven decisions faster and grow revenue predictably.",
         primaryButton: { text: "Start Free Trial", url: "/signup" },
         secondaryButton: { text: "Watch Demo", url: "/demo" },
         emailSignup: { placeholder: "Enter your work email" }
-      }
+      },
+      fallback: true,
+      error: error.message
     })
-  } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  } finally {
-    await client.close()
   }
 }
 
 export async function POST(request) {
   try {
+    if (!process.env.DATABASE_URI) {
+      throw new Error('DATABASE_URI environment variable is not set')
+    }
+
     const data = await request.json()
     
-    await client.connect()
+    const client = await connectToDatabase()
     const db = client.db()
     const collection = db.collection('heroes')
     
@@ -52,8 +94,10 @@ export async function POST(request) {
     
     return NextResponse.json({ success: true, result })
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
-  } finally {
-    await client.close()
+    console.error('POST /api/admin/hero error:', error.message)
+    return NextResponse.json({ 
+      success: false, 
+      error: error.message 
+    }, { status: 500 })
   }
 }

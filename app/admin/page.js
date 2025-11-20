@@ -11,14 +11,46 @@ export default function AdminPage() {
   // Load current hero data
   useEffect(() => {
     fetch('/api/admin/hero')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+        }
+        return res.json()
+      })
       .then(data => {
         if (data.success) {
           setHeroData(data.data)
+          if (data.fallback) {
+            setMessage('⚠️ Using fallback data. Database connection issue.')
+          }
+        } else {
+          setMessage(`❌ Failed to load content: ${data.error || 'Unknown error'}`)
+          // Set default data if API fails
+          setHeroData({
+            badge: "🚀 New AI Features Available",
+            headline: "The AI Revenue Platform for Next Gen Finance teams",
+            description: "Unlock powerful revenue insights with AI-driven analytics. Make data-driven decisions faster and grow revenue predictably.",
+            primaryButton: { text: "Start Free Trial", url: "/signup" },
+            secondaryButton: { text: "Watch Demo", url: "/demo" },
+            emailSignup: { placeholder: "Enter your work email" }
+          })
         }
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(error => {
+        console.error('Admin fetch error:', error)
+        setMessage(`❌ Connection failed: ${error.message}`)
+        // Set default data
+        setHeroData({
+          badge: "🚀 New AI Features Available",
+          headline: "The AI Revenue Platform for Next Gen Finance teams",
+          description: "Unlock powerful revenue insights with AI-driven analytics. Make data-driven decisions faster and grow revenue predictably.",
+          primaryButton: { text: "Start Free Trial", url: "/signup" },
+          secondaryButton: { text: "Watch Demo", url: "/demo" },
+          emailSignup: { placeholder: "Enter your work email" }
+        })
+        setLoading(false)
+      })
   }, [])
 
   const handleSave = async () => {
